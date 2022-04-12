@@ -1,5 +1,6 @@
 require './lib/cnifty/errors'
 require './lib/cnifty/payment_address'
+require './lib/cnifty/token'
 require './lib/cnifty/utxo'
 require './lib/cnifty/utxos'
 
