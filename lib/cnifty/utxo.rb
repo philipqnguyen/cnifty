@@ -13,8 +13,10 @@ module Cnifty
       @tokens ||= raw_tx.split(' + ')[1..-1].map do |token_set|
         token_set = token_set.split(' ')
         next if token_set.one?
-        Token.new amount: token_set[0], token: token_set[1]
-      end
+        policy_id = token_set[1].split('.').first
+        hex_name = token_set[1].split('.').last
+        Token.new amount: token_set[0], policy_id: policy_id, hex_name: hex_name
+      end.compact
     end
 
     def to_h
