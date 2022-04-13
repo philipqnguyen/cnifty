@@ -3,7 +3,8 @@ require 'securerandom'
 
 module Cnifty
   class PaymentAddress
-    def initialize
+    def initialize(address_literal = nil)
+      @address = address_literal
     end
 
     def to_s
@@ -25,10 +26,15 @@ module Cnifty
       @vkey
     end
 
+    def utxos
+      Utxos.new self
+    end
+
   private
 
     def generate
-      @generated ||= begin
+      return if @address
+      begin
         `cardano-cli address key-gen \
         --verification-key-file #{vkey_file.path} \
         --signing-key-file #{skey_file.path}

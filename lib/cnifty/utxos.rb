@@ -24,7 +24,7 @@ module Cnifty
   private
 
     def fetch
-      cmd = "cardano-cli query utxo --address #{payment_address} --#{chain}"
+      cmd = "cardano-cli query utxo --address #{payment_address.to_s} --#{chain}"
       stdout, stderr, status = Open3.capture3(cmd)
       raise CardanoNodeError, stderr if !stderr.empty? || status.exitstatus != 0
       results = stdout&.split("\n")
