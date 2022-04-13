@@ -1,4 +1,5 @@
 require 'open3'
+require 'forwardable'
 
 module Cnifty
   class Utxos

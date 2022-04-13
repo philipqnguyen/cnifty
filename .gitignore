@@ -1,0 +1,9 @@
+.bundle/
+log/*.log
+pkg/
+doc/
+.yardoc/
+Gemfile.lock
+.vscode
+.DS_Store
+tmp/
