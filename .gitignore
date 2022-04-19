@@ -7,3 +7,5 @@ Gemfile.lock
 .vscode
 .DS_Store
 tmp/
+sample/temp/*
+!sample/temp/.keep

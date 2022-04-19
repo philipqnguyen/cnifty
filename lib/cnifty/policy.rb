@@ -26,6 +26,11 @@ module Cnifty
       @script
     end
 
+    def before_slot
+      generate
+      slot
+    end
+
   private
 
     def generate
@@ -72,11 +77,13 @@ module Cnifty
     end
 
     def slot
-      cmd = "cardano-cli query tip --#{chain}"
-      stdout, stderr, status = Open3.capture3(cmd)
-      raise CardanoNodeError, stderr if !stderr.empty? || status.exitstatus != 0
-      current_slot = JSON.parse(stdout)['slot']
-      current_slot.to_i + 60
+      @slot ||= begin
+        cmd = "cardano-cli query tip --#{chain}"
+        stdout, stderr, status = Open3.capture3(cmd)
+        raise CardanoNodeError, stderr if !stderr.empty? || status.exitstatus != 0
+        current_slot = JSON.parse(stdout)['slot']
+        current_slot.to_i + 60
+      end
     end
 
     def key_hash

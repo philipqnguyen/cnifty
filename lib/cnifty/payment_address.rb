@@ -3,8 +3,10 @@ require 'securerandom'
 
 module Cnifty
   class PaymentAddress
-    def initialize(address_literal = nil)
-      @address = address_literal
+    def initialize(address: nil, skey: nil, vkey: nil)
+      @address = address
+      @skey = skey
+      @vkey = vkey
     end
 
     def to_s
