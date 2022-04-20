@@ -28,4 +28,4 @@ nft = Cnifty::Nft.new destination_address: destination_address,
                         eyes: "blue"
                       }
 
-nft.generate
+puts nft.mint

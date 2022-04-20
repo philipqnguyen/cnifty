@@ -32,7 +32,7 @@ module Cnifty
       @era = 'alonzo-era'
     end
 
-    def generate
+    def mint
       write_metadata
       write_policy_file
       write_policy_skey_file
