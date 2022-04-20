@@ -11,7 +11,8 @@ module Cnifty
                 :image,
                 :policy,
                 :era,
-                :chain
+                :chain,
+                :protocol
 
     def initialize(destination_address:,
                    change_address:,
@@ -37,7 +38,10 @@ module Cnifty
       write_policy_file
       write_policy_skey_file
       write_payment_address_skey_file
+      write_protocol_file
       execute_raw_transaction_command
+      fee = execute_calculate_min_fee_command
+      execute_raw_transaction_with_fees_command(fee)
       execute_sign_raw_transaction_command
       execute_submit_command
       execute_read_transaction_id
@@ -88,6 +92,14 @@ module Cnifty
       @payment_address_skey_file ||= Tempfile.new "payment_#{seed}.skey"
     end
 
+    def protocol_file
+      @protocol_file ||= Tempfile.new "protocol_#{seed}.json"
+    end
+
+    def write_protocol_file
+      File.write protocol_file, protocol.to_s
+    end
+
     def write_payment_address_skey_file
       File.write payment_address_skey_file, payment_address.skey
     end
@@ -116,21 +128,54 @@ module Cnifty
 
     def execute_raw_transaction_command
       cmd = """
-      cardano-cli transaction build \
+      cardano-cli transaction build-raw \
+        --invalid-hereafter #{policy.before_slot} \
         --#{era} \
-        --#{chain} \
-        #{tx_ins} \
-        --tx-out #{destination_tx_out} \
-        --change-address #{change_address} \
+        --fee 0 \
+        #{tx_ins_str} \
+        --tx-out #{tx_out} \
+        --tx-out #{change_tx_out(fee: 0)} \
         #{mints} \
         --minting-script-file #{policy_file.path} \
         --metadata-json-file #{metadata_file.path} \
-        --invalid-hereafter #{policy.before_slot} \
-        --witness-override 2 \
         --out-file #{transaction_file_raw.path}
       """
       stdout, stderr, status = Open3.capture3(cmd.strip)
-      raise CardanoNodeError, stderr if !stderr.empty? || status.exitstatus != 0
+      raise CardanoNodeError, stderr if !stderr.empty? || status.exitstatus !=0
+      true
+    end
+
+    def execute_calculate_min_fee_command
+      cmd = """
+      cardano-cli transaction calculate-min-fee \
+        --tx-body-file #{transaction_file_raw.path} \
+        --tx-in-count #{tx_ins.count} \
+        --tx-out-count 2 \
+        --witness-count 2 \
+        --#{chain} \
+        --protocol-params-file #{protocol_file.path}
+      """
+      stdout, stderr, status = Open3.capture3(cmd.strip)
+      raise CardanoNodeError, stderr if !stderr.empty? || status.exitstatus !=0
+      stdout.strip.split(' ').first
+    end
+
+    def execute_raw_transaction_with_fees_command(fee)
+      cmd = """
+      cardano-cli transaction build-raw \
+        --invalid-hereafter #{policy.before_slot} \
+        --#{era} \
+        --fee #{fee} \
+        #{tx_ins_str} \
+        --tx-out #{tx_out} \
+        --tx-out #{change_tx_out(fee: fee)} \
+        #{mints} \
+        --minting-script-file #{policy_file.path} \
+        --metadata-json-file #{metadata_file.path} \
+        --out-file #{transaction_file_raw.path}
+      """
+      stdout, stderr, status = Open3.capture3(cmd.strip)
+      raise CardanoNodeError, stderr if !stderr.empty? || status.exitstatus !=0
       true
     end
 
@@ -168,17 +213,25 @@ module Cnifty
       stdout
     end
 
-    def tx_ins
-      total = 0
-      utxos = payment_address.utxos.sort_by(&:ada).map do |utxo|
-        break if total >= (min_ada + 1_000_000)
-        total += utxo.ada.to_i
-        utxo
-      end
-      utxos.map { |utxo| "--tx-in #{utxo.tx_hash}##{utxo.tx_ix}" }.join(" ")
+    def tx_ins_str
+      tx_ins.map { |utxo| "--tx-in #{utxo.tx_hash}##{utxo.tx_ix}" }.join(" ")
     end
 
-    def destination_tx_out
+    def tx_ins
+      @tx_ins ||= begin
+        total = 0
+        utxos = []
+        payment_address.utxos.sort_by(&:ada).each do |utxo|
+          break if total >= min_ada + 1_000_000
+          total += utxo.ada.to_i
+          utxos << utxo
+          utxo
+        end
+        utxos
+      end
+    end
+
+    def tx_out
       "#{destination_address}+#{min_ada}+\"1 #{policy.id}.#{hex_name}\""
     end
 
@@ -199,6 +252,20 @@ module Cnifty
         "1 #{policy.id}.#{hex_name}"
       end.join(" + ")
       "--mint=\"#{args}\""
+    end
+
+    def change_tx_out(fee: 0)
+      amount = tx_ins.sum {|tx_in| tx_in.ada.to_i}
+      remaining_lovelace = amount - min_ada - fee.to_i
+      tokens = tx_ins.map(&:tokens).flatten
+      if tokens.any?
+        token_args = tokens.map do |token|
+          "\"#{token.amount} #{token.policy_id}.#{token.hex_name}\""
+        end.join('+')
+        "#{change_address}+#{remaining_lovelace}+#{token_args}"
+      else
+        "#{change_address}+#{remaining_lovelace}"
+      end
     end
   end
 end
