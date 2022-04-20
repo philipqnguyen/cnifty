@@ -40,7 +40,7 @@ module Cnifty
       execute_raw_transaction_command
       execute_sign_raw_transaction_command
       execute_submit_command
-      true
+      execute_read_transaction_id
     rescue CardanoNodeError
       false
     ensure
@@ -157,6 +157,15 @@ module Cnifty
       stdout, stderr, status = Open3.capture3(cmd.strip)
       raise CardanoNodeError, stderr if !stderr.empty? || status.exitstatus != 0
       true
+    end
+
+    def execute_read_transaction_id
+      cmd = """
+      cardano-cli transaction txid --tx-file #{transaction_file_signed.path}
+      """
+      stdout, stderr, status = Open3.capture3(cmd.strip)
+      raise CardanoNodeError, stderr if !stderr.empty? || status.exitstatus != 0
+      stdout
     end
 
     def tx_ins
