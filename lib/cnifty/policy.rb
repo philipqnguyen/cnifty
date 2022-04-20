@@ -82,7 +82,7 @@ module Cnifty
         stdout, stderr, status = Open3.capture3(cmd)
         raise CardanoNodeError, stderr if !stderr.empty? || status.exitstatus != 0
         current_slot = JSON.parse(stdout)['slot']
-        current_slot.to_i + 60
+        current_slot.to_i + 3600
       end
     end
 
