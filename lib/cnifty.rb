@@ -6,6 +6,7 @@ require 'cnifty/utxos'
 require 'cnifty/protocol'
 require 'cnifty/policy'
 require 'cnifty/nft'
+require 'cnifty/transaction'
 
 module Cnifty
 end

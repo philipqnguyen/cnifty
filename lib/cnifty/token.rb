@@ -1,6 +1,7 @@
 module Cnifty
   class Token
-    attr_reader :amount, :policy_id, :name, :hex_name
+    attr_reader :policy_id, :name, :hex_name
+    attr_accessor :amount
 
     def initialize(amount:, policy_id:, hex_name:)
       @amount = amount
