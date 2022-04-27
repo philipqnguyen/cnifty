@@ -208,7 +208,7 @@ module Cnifty
       """
       stdout, stderr, status = Open3.capture3(cmd.strip)
       raise CardanoNodeError, stderr if !stderr.empty? || status.exitstatus != 0
-      stdout
+      stdout.chomp
     end
 
     def tx_ins_str
