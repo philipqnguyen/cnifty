@@ -45,8 +45,6 @@ module Cnifty
       execute_sign_raw_transaction_command
       execute_submit_command
       execute_read_transaction_id
-    rescue CardanoNodeError
-      false
     ensure
       transaction_file_raw.close
       transaction_file_raw.unlink
