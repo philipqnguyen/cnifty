@@ -5,6 +5,14 @@ require 'open3'
 
 module Cnifty
   class Policy
+    def initialize(id: nil, script: nil, vkey: nil, skey: nil, before_slot: nil)
+      @generated = true if id
+      @policy_id = id
+      @script = script
+      @vkey = vkey
+      @skey = skey
+      @slot = before_slot
+    end
 
     def id
       generate
