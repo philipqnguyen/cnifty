@@ -1,5 +1,6 @@
 require 'cnifty/errors'
 require 'cnifty/payment_address'
+require 'cnifty/tip'
 require 'cnifty/token'
 require 'cnifty/utxo'
 require 'cnifty/utxos'

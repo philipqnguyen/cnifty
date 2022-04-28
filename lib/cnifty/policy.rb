@@ -86,11 +86,7 @@ module Cnifty
 
     def slot
       @slot ||= begin
-        cmd = "cardano-cli query tip --#{chain}"
-        stdout, stderr, status = Open3.capture3(cmd)
-        raise CardanoNodeError, stderr if !stderr.empty? || status.exitstatus != 0
-        current_slot = JSON.parse(stdout)['slot']
-        current_slot.to_i + 3600
+        Tip.new.slot + 3600
       end
     end
 
